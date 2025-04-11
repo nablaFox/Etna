@@ -55,7 +55,9 @@ int main(void) {
 	while (!window.shouldClose()) {
 		window.pollEvents();
 
-		updateFirstPersonCamera(playerCamera, window);
+		engine::updateTime();
+
+		firstPersonMovement(playerCamera, window);
 
 		renderer.beginFrame(window);
 

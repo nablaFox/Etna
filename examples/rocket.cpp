@@ -39,8 +39,8 @@ void simulateRocket(PhysicalObject& rocket, SceneNode rocketMesh) {
 
 	rocket.force = {0, decForce - weight, 0};
 
-	rocket.update(1.0 / 60.0f);	 // TEMP: (we should use real delta time)
-	rocketMesh->updatePosition(rocket.pos * WU_PER_METER);
+	rocket.update();
+	rocketMesh->updatePosition(rocket.getRenderPosition(WU_PER_METER));
 }
 
 SceneNode createRocketModel() {
@@ -115,11 +115,13 @@ int main(void) {
 	while (!window.shouldClose()) {
 		window.pollEvents();
 
+		engine::updateTime();
+
 		if (simulate) {
 			simulateRocket(rocket, rocketMesh);
 		}
 
-		updateFirstPersonCamera(playerCamera, window);
+		firstPersonMovement(playerCamera, window);
 
 		if (window.isKeyClicked(GLFW_KEY_ENTER)) {
 			simulate = !simulate;

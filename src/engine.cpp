@@ -11,17 +11,13 @@ Device* g_device{nullptr};
 VkQueue g_graphicsQueue{nullptr};
 VkQueue g_immediateQueue{nullptr};
 VkQueue g_presentQueue{nullptr};
+float g_deltaTime{0};
 
 std::deque<std::function<void()>> g_deletionQueue;
 
 std::string g_shadersFolder;
 
-static void checkInit() {
-	if (g_device == nullptr) {
-		throw std::runtime_error(
-			"Engine must be initialized to access the GPU device");
-	}
-}
+#define CHECK_INIT assert(g_device != nullptr && "Engine not initialized");
 
 static void cleanup() {
 	g_device->waitIdle();
@@ -63,13 +59,13 @@ void engine::init(const InitInfo& info) {
 }
 
 Device& engine::getDevice() {
-	checkInit();
+	CHECK_INIT;
 
 	return *g_device;
 }
 
 void engine::immediateSubmit(std::function<void(ignis::Command&)>&& func) {
-	checkInit();
+	CHECK_INIT;
 
 	Command cmd{{
 		.device = *g_device,
@@ -103,25 +99,25 @@ void engine::presentCurrent(const ignis::Swapchain& swapchain,
 }
 
 ignis::Command engine::createGraphicsCommand() {
-	checkInit();
+	CHECK_INIT;
 
 	return Command({.device = *g_device, .queue = g_graphicsQueue});
 }
 
 ignis::Command* engine::newGraphicsCommand() {
-	checkInit();
+	CHECK_INIT;
 
 	return new Command({.device = *g_device, .queue = g_graphicsQueue});
 }
 
 void engine::queueForDeletion(std::function<void()> func) {
-	checkInit();
+	CHECK_INIT;
 
 	g_deletionQueue.push_back(func);
 }
 
 uint32_t engine::clampSampleCount(uint32_t sampleCount) {
-	checkInit();
+	CHECK_INIT;
 
 	if (sampleCount == 0) {
 		return MAX_SAMPLE_COUNT;
@@ -134,22 +130,38 @@ uint32_t engine::clampSampleCount(uint32_t sampleCount) {
 }
 
 ignis::Shader* engine::newShader(const std::string& path) {
-	checkInit();
+	CHECK_INIT;
 
-	// TEMP: determine stage by looking at extension
-	const size_t lastDot = path.find_last_of('.');
-	const size_t penultimateDot = path.find_last_of('.', lastDot - 1);
-	const std::string ext =
-		path.substr(penultimateDot + 1, lastDot - penultimateDot - 1);
+	const std::string::size_type extPos = path.find_last_of('.');
+	const std::string ext = path.substr(extPos + 1);
 
 	const VkShaderStageFlagBits stage =
 		ext == "vert" ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	// TEMP
-	const std::string shaderPath = g_shadersFolder + "/" + path;
+	const std::string shaderPath = g_shadersFolder + "/" + path + ".spv";
 
 	ignis::Shader* shader =
 		new Shader(g_device->createShader(shaderPath, stage, sizeof(PushConstants)));
 
 	return shader;
+}
+
+float engine::getDeltaTime() {
+	CHECK_INIT;
+
+	return g_deltaTime;
+}
+
+float engine::updateTime() {
+	CHECK_INIT;
+
+	static float lastTime = 0;
+	static float currentTime = 0;
+
+	lastTime = currentTime;
+	currentTime = (float)glfwGetTime();
+
+	g_deltaTime = currentTime - lastTime;
+
+	return g_deltaTime;
 }

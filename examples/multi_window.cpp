@@ -44,7 +44,9 @@ int main(void) {
 		window1.pollEvents();
 		window2.pollEvents();
 
-		updateFirstPersonCamera(camera, window1);
+		engine::updateTime();
+
+		firstPersonMovement(camera, window1);
 
 		if (window1.shouldClose() || window2.shouldClose()) {
 			shouldClose = true;

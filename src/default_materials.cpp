@@ -57,7 +57,7 @@ void engine::initColorMaterial() {
 	}
 
 	g_colorMaterialTemplate = MaterialTemplate::create({
-		.shaders = {"default.vert.spv", "default.frag.spv"},
+		.shaders = {"default.vert", "default.frag"},
 		.paramsSize = sizeof(Color),
 	});
 
@@ -70,7 +70,7 @@ void engine::initPointMaterial() {
 	}
 
 	g_pointMaterialTemplate = MaterialTemplate::create({
-		.shaders = {"default.vert.spv", "default.frag.spv"},
+		.shaders = {"default.vert", "default.frag"},
 		.paramsSize = sizeof(Color),
 		.polygonMode = VK_POLYGON_MODE_POINT,
 	});
@@ -84,7 +84,7 @@ void engine::initGridMaterial() {
 	}
 
 	g_gridTemplate = MaterialTemplate::create({
-		.shaders = {"default.vert.spv", "grid.frag.spv"},
+		.shaders = {"default.vert", "grid.frag"},
 		.paramsSize = sizeof(GridMaterialParams),
 	});
 
@@ -97,7 +97,7 @@ void engine::initTransparentGridMaterial() {
 	}
 
 	g_transparentGridTemplate = MaterialTemplate::create({
-		.shaders = {"default.vert.spv", "grid.frag.spv"},
+		.shaders = {"default.vert", "grid.frag"},
 		.paramsSize = sizeof(GridMaterialParams),
 		.transparency = true,
 	});

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine.hpp"
 #include "etna/etna_core.hpp"
 #include "scene.hpp"
 
@@ -7,14 +8,15 @@ using namespace etna;
 
 struct FirstPersonMovementOpts {
 	bool flyAround{true};
-	float deltaTime{1 / 60.f};
 	float cameraSpeed{6.f};
 	float sensitivity{0.001f};
 };
 
-inline Transform getFirstPersonMovement(Transform& transform,
-										Window& window,
-										const FirstPersonMovementOpts opts = {}) {
+inline void firstPersonMovement(CameraNode camera,
+								Window& window,
+								const FirstPersonMovementOpts opts = {}) {
+	Transform transform = camera->getTransform();
+
 	transform.yaw += window.mouseDeltaX() * opts.sensitivity;
 	transform.pitch += window.mouseDeltaY() * opts.sensitivity;
 
@@ -35,32 +37,34 @@ inline Transform getFirstPersonMovement(Transform& transform,
 
 	const Vec3 up = opts.flyAround ? transform.up() : Vec3{0, 0, 0};
 
+	float dt = engine::getDeltaTime();
+
 	if (window.isKeyPressed(GLFW_KEY_0)) {
 		position = {0, 1, 0};
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_W)) {
-		position += playerForward * opts.cameraSpeed * opts.deltaTime;
+		position += playerForward * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_S)) {
-		position -= playerForward * opts.cameraSpeed * opts.deltaTime;
+		position -= playerForward * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_D)) {
-		position += playerRight * opts.cameraSpeed * opts.deltaTime;
+		position += playerRight * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_A)) {
-		position -= playerRight * opts.cameraSpeed * opts.deltaTime;
+		position -= playerRight * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_SPACE)) {
-		position += up * opts.cameraSpeed * opts.deltaTime;
+		position += up * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
-		position -= up * opts.cameraSpeed * opts.deltaTime;
+		position -= up * opts.cameraSpeed * dt;
 	}
 
 	if (window.isKeyPressed(GLFW_KEY_ESCAPE)) {
@@ -71,14 +75,7 @@ inline Transform getFirstPersonMovement(Transform& transform,
 		window.setCaptureMouse(true);
 	}
 
-	return transform;
-}
-
-inline void updateFirstPersonCamera(CameraNode camera,
-									Window& window,
-									FirstPersonMovementOpts opts = {}) {
-	Transform transform = camera->getTransform();
-	camera->updateTransform(getFirstPersonMovement(transform, window, opts));
+	camera->updateTransform(transform);
 }
 
 struct FloorCreateInfo {
@@ -152,7 +149,7 @@ inline MeshNode createOutlinedBrick(const OutlinedBrickCreateInfo& info) {
 
 	if (g_outlineTemplate == nullptr) {
 		g_outlineTemplate = MaterialTemplate::create({
-			.shaders = {"default.vert.spv", "examples/brick_outline.frag.spv"},
+			.shaders = {"default.vert", "examples/brick_outline.frag"},
 			.paramsSize = sizeof(OutlineMaterialParams),
 		});
 
@@ -233,8 +230,7 @@ inline MeshNode createInstancedMesh(const InstanceMeshCreateInfo& info) {
 
 	if (g_instancedMaterial == nullptr) {
 		g_instancedMaterial = Material::create({
-			.shaders = {"examples/instanced.vert.spv",
-						"examples/instanced.frag.spv"},
+			.shaders = {"examples/instanced.vert", "examples/instanced.frag"},
 		});
 
 		engine::queueForDeletion([=] { g_instancedMaterial.reset(); });
@@ -252,30 +248,41 @@ inline MeshNode createInstancedMesh(const InstanceMeshCreateInfo& info) {
 
 struct PhysicalObject {
 	float mass{1};
-	etna::Vec3 force{};
-	etna::Vec3 acc{};
-	etna::Vec3 vel{};
-	etna::Vec3 pos{};  // position in physics world
+	Vec3 force{};
+	Vec3 acc{};
+	Vec3 vel{};
+	Vec3 pos{};
+	Vec3 prevPos{};
+	float timeAccumulator{0};
+	float timeStep{1.f / 60.f};
 
-	void update(float dt, float timeStep = 1.f / 60.f) {
+	void update() {
+		float dt = engine::getDeltaTime();
+
 		if (dt > 0.25f) {
 			dt = 0.25f;
 		}
 
-		float timeAccumulator{0};
-
 		timeAccumulator += dt;
 
 		while (timeAccumulator >= timeStep) {
-			etna::Vec3 oldAcc = acc;
+			prevPos = pos;
 
-			pos += vel * timeStep + oldAcc * etna::square(timeStep) * 0.5f;
+			Vec3 oldAcc = acc;
 
-			etna::Vec3 newAcc = force / mass;
+			pos += vel * timeStep + oldAcc * square(timeStep) * 0.5f;
+
+			Vec3 newAcc = force / mass;
 
 			vel += (oldAcc + newAcc) * timeStep * 0.5f;
 
 			timeAccumulator -= timeStep;
 		}
+	}
+
+	Vec3 getRenderPosition(float wuPerMeter = 1.f) {
+		float alpha = timeAccumulator / timeStep;
+		Vec3 interPos = pos * alpha + prevPos * (1.0f - alpha);
+		return interPos * wuPerMeter;
 	}
 };

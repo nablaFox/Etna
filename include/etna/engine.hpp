@@ -42,6 +42,10 @@ uint32_t clampSampleCount(uint32_t sampleCount);
 
 ignis::Shader* newShader(const std::string& path);
 
+float getDeltaTime();
+
+float updateTime();
+
 constexpr ignis::ColorFormat COLOR_FORMAT{ignis::ColorFormat::RGBA16};
 
 constexpr ignis::DepthFormat DEPTH_FORMAT{ignis::DepthFormat::D32_SFLOAT};

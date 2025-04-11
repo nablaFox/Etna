@@ -62,7 +62,7 @@ int main(void) {
 	while (!window.shouldClose()) {
 		window.pollEvents();
 
-		updateFirstPersonCamera(playerCamera, window, {.flyAround = true});
+		firstPersonMovement(playerCamera, window);
 
 		sun->rotate(0, 0.005, 0);
 

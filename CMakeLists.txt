@@ -15,8 +15,6 @@ CPMAddPackage(
   NAME Ignis
   GITHUB_REPOSITORY nablaFox/Ignis
   GIT_TAG main
-  OPTIONS
-  	"IGNIS_BUILD_EXAMPLES OFF"
 )
 
 CPMAddPackage(
@@ -27,11 +25,8 @@ CPMAddPackage(
     "GLFW_BUILD_EXAMPLES OFF"
     "GLFW_BUILD_TESTS OFF"
     "GLFW_BUILD_DOCS OFF"
-    "BUILD_SHARED_LIBS ON"
 	"GLFW_INSTALL FALSE"
 )
-
-install(TARGETS glfw LIBRARY DESTINATION lib)
 
 target_link_libraries(etna PUBLIC
 	glfw
