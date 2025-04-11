@@ -149,7 +149,7 @@ inline MeshNode createOutlinedBrick(const OutlinedBrickCreateInfo& info) {
 
 	if (g_outlineTemplate == nullptr) {
 		g_outlineTemplate = MaterialTemplate::create({
-			.shaders = {"default.vert", "examples/brick_outline.frag"},
+			.shaders = {"default.vert", "brick_outline.frag"},
 			.paramsSize = sizeof(OutlineMaterialParams),
 		});
 
@@ -159,7 +159,7 @@ inline MeshNode createOutlinedBrick(const OutlinedBrickCreateInfo& info) {
 	// PONDER: maybe enable dynamic transparency
 	if (g_outlineTemplateTransparent == nullptr && info.transparent) {
 		g_outlineTemplateTransparent = MaterialTemplate::create({
-			.shaders = {"default.vert.spv", "examples/brick_outline.frag.spv"},
+			.shaders = {"default.vert.spv", "brick_outline.frag.spv"},
 			.paramsSize = sizeof(OutlineMaterialParams),
 			.transparency = true,
 		});
@@ -230,7 +230,7 @@ inline MeshNode createInstancedMesh(const InstanceMeshCreateInfo& info) {
 
 	if (g_instancedMaterial == nullptr) {
 		g_instancedMaterial = Material::create({
-			.shaders = {"examples/instanced.vert", "examples/instanced.frag"},
+			.shaders = {"instanced.vert", "instanced.frag"},
 		});
 
 		engine::queueForDeletion([=] { g_instancedMaterial.reset(); });

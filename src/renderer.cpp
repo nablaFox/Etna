@@ -6,7 +6,7 @@
 using namespace etna;
 using namespace ignis;
 
-MaterialHandle g_defaultMaterial{nullptr};
+static MaterialHandle g_defaultMaterial{nullptr};
 
 Renderer::Renderer(const CreateInfo& info) : m_framesInFlight(info.framesInFlight) {
 	assert(m_framesInFlight > 0);

@@ -12,7 +12,7 @@ ColumnLimit: 85
 MaxEmptyLinesToKeep: 1
 SortIncludes: false
 AlwaysBreakTemplateDeclarations: true
-
+FixNamespaceComments: false
 ---
 
 

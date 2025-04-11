@@ -6,10 +6,17 @@
 
 namespace etna {
 
+struct RawShader {
+	const unsigned char* code;
+	size_t size;
+	VkShaderStageFlagBits stage;
+};
+
 class MaterialTemplate {
 public:
 	struct CreateInfo {
 		std::vector<std::string> shaders;
+		std::vector<RawShader> rawShaders;
 		size_t paramsSize{0};  // TODO: reflect this
 		bool enableDepth{true};
 		bool transparency{false};

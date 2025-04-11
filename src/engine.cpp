@@ -7,13 +7,17 @@
 using namespace etna;
 using namespace ignis;
 
+namespace {
+
 Device* g_device{nullptr};
 VkQueue g_graphicsQueue{nullptr};
 VkQueue g_immediateQueue{nullptr};
 VkQueue g_presentQueue{nullptr};
 float g_deltaTime{0};
 
-std::deque<std::function<void()>> g_deletionQueue;
+}
+
+static std::deque<std::function<void()>> g_deletionQueue;
 
 std::string g_shadersFolder;
 
@@ -144,6 +148,14 @@ ignis::Shader* engine::newShader(const std::string& path) {
 		new Shader(g_device->createShader(shaderPath, stage, sizeof(PushConstants)));
 
 	return shader;
+}
+
+ignis::Shader* engine::newShader(const unsigned char* code,
+								 size_t size,
+								 VkShaderStageFlagBits stage) {
+	CHECK_INIT;
+
+	return new Shader(g_device->createShader(code, size, stage));
 }
 
 float engine::getDeltaTime() {

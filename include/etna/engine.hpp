@@ -42,6 +42,8 @@ uint32_t clampSampleCount(uint32_t sampleCount);
 
 ignis::Shader* newShader(const std::string& path);
 
+ignis::Shader* newShader(const unsigned char*, size_t, VkShaderStageFlagBits);
+
 float getDeltaTime();
 
 float updateTime();

@@ -70,23 +70,32 @@ int main(void) {
 
 For more check-out [`examples`](./examples).
 
-You can use the `./examples/run.sh` script utility to easily compile and run an
-example:
+### Building/Installation
+
+Etna is builded with CMake as a static library:
 
 ```bash
-./examples/run.sh rocket
-```
-
-### Building
-
-Etna is built as a static library using CMake:
-
-```bash
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
+sudo cmake --install build  # Omit 'sudo' for local user install
 ```
 
-Link to your project via CMake's `add_subdirectory` or install system-wide with `--target install`.
+You can find a prebuilt version [here]().
+
+### Usage
+
+Standalone Build:
+
+```bash
+g++ main.cpp -Ipath/to/etna/include -Lpath/to/etna/lib -letna
+```
+
+With CMake:
+
+```cmake
+add_subdirectory(etna_path) # or find_package(etna REQUIRED) if system-wide installed
+target_link_libraries(your_target PRIVATE etna::etna)
+```
 
 ### Dependencies
 

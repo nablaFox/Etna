@@ -4,10 +4,14 @@
 
 using namespace etna;
 
+namespace {
+
 MeshHandle g_sphere{nullptr};
 MeshHandle g_cube{nullptr};
 MeshHandle g_pyramid{nullptr};
 MeshHandle g_quad{nullptr};
+
+}
 
 MeshHandle engine::getSphere() {
 	initSphere();

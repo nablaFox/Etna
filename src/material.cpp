@@ -12,6 +12,11 @@ MaterialTemplate::MaterialTemplate(const CreateInfo& info)
 		m_shaders.push_back(engine::newShader(shaderPath));
 	}
 
+	for (const auto& shader : info.rawShaders) {
+		m_shaders.push_back(
+			engine::newShader(shader.code, shader.size, shader.stage));
+	}
+
 	PipelineCreateInfo pipelineInfo{
 		.device = &_device,
 		.shaders = m_shaders,
@@ -74,7 +79,7 @@ Material::Material(const CreateInfo& info)
 
 Material::Material(const MaterialTemplate::CreateInfo& info) {
 	m_materialTemplate = MaterialTemplate::create({
-		.shaders = info.shaders,
+		.rawShaders = info.rawShaders,
 		.paramsSize = info.paramsSize,
 		.enableDepth = info.enableDepth,
 		.transparency = info.transparency,

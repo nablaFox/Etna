@@ -3,10 +3,13 @@ project(etna)
 
 include(cmake/CPM.cmake)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(ETNA_BUILD_EXAMPLES "Build the examples" ${PROJECT_IS_TOP_LEVEL})
+option(ETNA_INSTALL "Install the library" ${PROJECT_IS_TOP_LEVEL})
+
+find_program(GLSLC glslc REQUIRED)
 
 file(GLOB ETNA_SRC "src/*.cpp")
 add_library(etna STATIC ${ETNA_SRC})
@@ -14,6 +17,12 @@ add_library(etna STATIC ${ETNA_SRC})
 target_include_directories(etna PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
+
+target_compile_definitions(etna PUBLIC
+  ETNA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffunction-sections -fdata-sections -Wl,--gc-sections")
 
 CPMAddPackage(
   NAME Ignis
@@ -33,65 +42,62 @@ CPMAddPackage(
 )
 
 target_link_libraries(etna PUBLIC
-	glfw
-  Ignis
+    glfw
+    Ignis
 )
 
+function(compile_shaders TARGET_NAME SHADER_SRC_DIR SHADER_DST_DIR)
+    file(GLOB SHADER_SOURCES
+        "${SHADER_SRC_DIR}/*.vert"
+        "${SHADER_SRC_DIR}/*.frag"
+    )
+
+    set(SHADER_OUTPUTS "")
+    foreach(SHADER_SOURCE ${SHADER_SOURCES})
+        get_filename_component(SHADER_NAME ${SHADER_SOURCE} NAME)
+        set(SHADER_OUTPUT "${SHADER_DST_DIR}/${SHADER_NAME}.spv")
+        list(APPEND SHADER_OUTPUTS ${SHADER_OUTPUT})
+        set(GLSLC_ARGS "-I${CMAKE_CURRENT_SOURCE_DIR}/include/etna/shaders")
+
+        add_custom_command(
+            OUTPUT ${SHADER_OUTPUT}
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_DST_DIR}"
+            COMMAND ${GLSLC} ${GLSLC_ARGS} "${SHADER_SOURCE}" -o "${SHADER_OUTPUT}"
+            DEPENDS "${SHADER_SOURCE}"
+            COMMENT "Compiling shader ${SHADER_NAME}"
+        )
+    endforeach()
+
+    add_custom_target(compile_shaders_${TARGET_NAME} DEPENDS ${SHADER_OUTPUTS})
+endfunction()
+
+# these should go inside src/shaders
+compile_shaders("src" "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders" "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders")
+add_dependencies(etna compile_shaders_src)
+
+if (ETNA_INSTALL)
+  install(TARGETS etna
+    EXPORT etnaTargets
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+  install(DIRECTORY include/
+    DESTINATION include
+  )
+endif()
+
 if(ETNA_BUILD_EXAMPLES)
-	find_program(GLSLC glslc REQUIRED)
+    # these should go inside build/shaders
+    compile_shaders("examples" "${CMAKE_CURRENT_SOURCE_DIR}/examples/shaders" "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
-	file(GLOB ALL_SHADER_SOURCES
-	  "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
-	  "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
-	  "${CMAKE_CURRENT_SOURCE_DIR}/examples/shaders/*.vert"
-	  "${CMAKE_CURRENT_SOURCE_DIR}/examples/shaders/*.frag"
-	)
-
-	set(SHADER_SPV_FILES)
-
-  foreach(SHADER_SOURCE ${ALL_SHADER_SOURCES})
-      get_filename_component(SHADER_DIR ${SHADER_SOURCE} DIRECTORY)
-      file(RELATIVE_PATH SHADER_REL_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${SHADER_DIR})
-      get_filename_component(SHADER_NAME ${SHADER_SOURCE} NAME)
-
-      set(GLSLC_ARGS)
-      set(SHADER_DEPENDENCIES ${SHADER_SOURCE})
-
-      set(OUTPUT_SUBDIR "") 
-      if(SHADER_REL_DIR STREQUAL "examples/shaders")
-          set(OUTPUT_SUBDIR "examples")
-          list(APPEND GLSLC_ARGS "-I${CMAKE_CURRENT_SOURCE_DIR}/shaders")
-      endif()
-
-      set(BASE_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
-      if(OUTPUT_SUBDIR)
-          set(SHADER_OUTPUT "${BASE_SHADER_OUTPUT_DIR}/${OUTPUT_SUBDIR}/${SHADER_NAME}.spv")
-      else()
-          set(SHADER_OUTPUT "${BASE_SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv")
-      endif()
-
-      get_filename_component(SHADER_OUTPUT_DIR ${SHADER_OUTPUT} DIRECTORY)
-      file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
-
-      add_custom_command(
-          OUTPUT ${SHADER_OUTPUT}
-          COMMAND ${GLSLC} ${GLSLC_ARGS} ${SHADER_SOURCE} -o ${SHADER_OUTPUT}
-          DEPENDS ${SHADER_DEPENDENCIES}
-          COMMENT "Compiling ${SHADER_REL_DIR}/${SHADER_NAME} to ${SHADER_OUTPUT}"
-          VERBATIM
-      )
-
-      list(APPEND SHADER_SPV_FILES ${SHADER_OUTPUT})
-  endforeach()
-
-	add_custom_target(compile_shaders ALL DEPENDS ${SHADER_SPV_FILES})
-
-	file(GLOB EXAMPLES_SRC "examples/*.cpp")
-
-	foreach(EXAMPLE_SRC ${EXAMPLES_SRC})
-		get_filename_component(EXAMPLE_NAME ${EXAMPLE_SRC} NAME_WE)
-		add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
-		target_link_libraries(${EXAMPLE_NAME} PRIVATE etna)
-		target_include_directories(${EXAMPLE_NAME} PRIVATE "include")
-	endforeach()
+    file(GLOB EXAMPLES_SRC "examples/*.cpp")
+    foreach(EXAMPLE_SRC ${EXAMPLES_SRC})
+        get_filename_component(EXAMPLE_NAME ${EXAMPLE_SRC} NAME_WE)
+        add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
+        add_dependencies(${EXAMPLE_NAME} compile_shaders_examples)
+        target_link_libraries(${EXAMPLE_NAME} PRIVATE etna)
+        target_include_directories(${EXAMPLE_NAME} PRIVATE "include")
+    endforeach()
 endif()
